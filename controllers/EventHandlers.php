@@ -37,14 +37,20 @@ class EventHandlers extends Base {
       $style = isset(BorderModel::STYLES[$border->border_style ?? ''])
         ? $border->border_style
         : BorderModel::DEFAULT_STYLE;
-      $cssParts = [];
+      // Layout-safe: border must not expand past the content column (esp. mobile).
+      $cssParts = [
+        'box-sizing:border-box',
+        'max-width:100%',
+        'height:auto',
+      ];
       if ($width > 0) {
         $cssParts[] = sprintf('border:%dpx %s %s', $width, $style, $color);
       }
       if (($border->shadow ?? 'N') === 'Y') {
+        // Keep shadow inside-ish; still paints outside but does not affect layout width.
         $cssParts[] = 'box-shadow:0 2px 8px rgba(0,0,0,.35)';
       }
-      if (!$cssParts) {
+      if ($width <= 0 && ($border->shadow ?? 'N') !== 'Y') {
         return;
       }
       $cssValue = implode(';', $cssParts) . ';';
