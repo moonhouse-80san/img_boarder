@@ -1,0 +1,16 @@
+<query id="updateBorder" action="update">
+  <tables>
+    <table name="img_boarder" />
+  </tables>
+  <columns>
+    <column name="module_srl" var="module_srl" />
+    <column name="border_width" var="border_width" />
+    <column name="border_color" var="border_color" />
+    <column name="border_style" var="border_style" />
+    <column name="shadow" var="shadow" />
+    <column name="min_image_width" var="min_image_width" />
+  </columns>
+  <conditions>
+    <condition operation="equal" column="document_srl" var="document_srl" required="true" />
+  </conditions>
+</query>

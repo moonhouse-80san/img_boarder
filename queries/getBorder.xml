@@ -1,0 +1,11 @@
+<query id="getBorder" action="select">
+  <tables>
+    <table name="img_boarder" />
+  </tables>
+  <columns>
+    <column name="*" />
+  </columns>
+  <conditions>
+    <condition operation="equal" column="document_srl" var="document_srl" required="true" />
+  </conditions>
+</query>

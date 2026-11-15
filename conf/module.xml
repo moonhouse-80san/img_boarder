@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<module>
+  <actions>
+    <action name="dispImg_boarderAdminConfig" class="Controllers\Admin" permission="root" menu-name="img_boarder" admin-index="true" />
+    <action name="procImg_boarderAdminInsertConfig" class="Controllers\Admin" permission="root" />
+  </actions>
+
+  <eventHandlers>
+    <eventHandler after="moduleHandler.proc" class="Controllers\EventHandlers" method="afterModuleProc" />
+    <eventHandler after="document.insertDocument" class="Controllers\EventHandlers" method="afterInsertDocument" />
+    <eventHandler after="document.updateDocument" class="Controllers\EventHandlers" method="afterUpdateDocument" />
+    <eventHandler after="document.deleteDocument" class="Controllers\EventHandlers" method="afterDeleteDocument" />
+  </eventHandlers>
+
+  <menus>
+    <menu name="img_boarder" type="all">
+      <title xml:lang="ko">본문 이미지 테두리</title>
+      <title xml:lang="en">Img Boarder</title>
+    </menu>
+  </menus>
+</module>
