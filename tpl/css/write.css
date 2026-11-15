@@ -1,4 +1,57 @@
-.ib_box { margin: 10px 0; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa; }
+.ib_box {
+  margin: 10px 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fafafa;
+  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.ib_box:not(.is-collapsed) {
+  width: 100%;
+}
+.ib_box .ib_toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  color: inherit;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.ib_box .ib_toggle:hover { background: #f0f0f0; }
+.ib_box .ib_toggle_state {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+/* collapsed → Open */
+.ib_box.is-collapsed .ib_toggle_state {
+  color: #1a6fd4;
+  background: #e8f1fc;
+  border-color: #b7d4f5;
+}
+/* open → Close */
+.ib_box:not(.is-collapsed) .ib_toggle_state {
+  color: #8a5a00;
+  background: #fff4e0;
+  border-color: #f0d9a8;
+}
+.ib_box .ib_body { display: none; padding: 0 14px 12px; border-top: 1px solid #e5e5e5; }
+.ib_box:not(.is-collapsed) .ib_body { display: block; padding-top: 12px; }
 .ib_box .ib_row { margin: 0 0 12px; }
 .ib_box .ib_row:last-child { margin-bottom: 0; }
 .ib_box label { display: block; margin-bottom: 6px; font-weight: 700; }

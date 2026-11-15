@@ -1,6 +1,6 @@
 /**
- * Img_boarder - moves the option box (#ibBox) into the document write form,
- * right above the submit buttons, and keeps the inputs in sync.
+ * Img_boarder - places the option box into the write form and handles fold + color sync.
+ * Default: collapsed (is-collapsed). Toggle label: Open / Close.
  */
 jQuery(function ($) {
   var $box = $('#ibBox');
@@ -8,6 +8,8 @@ jQuery(function ($) {
   var $color = $('#ibColor');
   var $picker = $('#ibPicker');
   var $chips = $box.find('.ib_chip');
+  var $toggle = $('#ibToggle');
+  var $state = $toggle.find('.ib_toggle_state');
 
   function isHex(v) {
     return /^#[0-9a-f]+$/i.test(v) && (v.length === 4 || v.length === 7 || v.length === 9);
@@ -21,6 +23,12 @@ jQuery(function ($) {
     $chips.removeClass('on').filter(function () {
       return String($(this).data('color')).toLowerCase() === v.toLowerCase();
     }).addClass('on');
+  }
+
+  function syncToggleLabel() {
+    var open = !$box.hasClass('is-collapsed');
+    $state.text(open ? 'Close' : 'Open');
+    $toggle.attr('aria-expanded', open ? 'true' : 'false');
   }
 
   function place() {
@@ -42,12 +50,19 @@ jQuery(function ($) {
       $area.after($box);
     }
     $box.prop('hidden', false);
+    syncToggleLabel();
     return true;
   }
 
   if (!$box.length) {
     return;
   }
+
+  $toggle.on('click', function (e) {
+    e.preventDefault();
+    $box.toggleClass('is-collapsed');
+    syncToggleLabel();
+  });
 
   $width.on('change blur', function () {
     var n = parseInt($width.val(), 10);

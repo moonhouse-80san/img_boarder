@@ -97,7 +97,11 @@ class EventHandlers extends Base {
       );
     }
     $box = sprintf(
-      '<div id="ibBox" class="ib_box" hidden>'
+      '<div id="ibBox" class="ib_box is-collapsed" hidden>'
+      . '<button type="button" class="ib_toggle" id="ibToggle" aria-expanded="false">'
+      . '<span class="ib_toggle_label">%20$s</span><span class="ib_toggle_state">Open</span>'
+      . '</button>'
+      . '<div class="ib_body">'
       . '<input type="hidden" name="ib_use" value="Y" />'
       . '<div class="ib_row"><label for="ibWidth">%1$s</label>'
       . '<input type="number" id="ibWidth" name="ib_width" min="0" max="%2$d" step="1" value="%3$d" /> px'
@@ -115,7 +119,7 @@ class EventHandlers extends Base {
       . '<div class="ib_row"><label>%16$s</label>'
       . '<label class="ib_chk"><input type="checkbox" id="ibShadow" name="ib_shadow" value="Y"%17$s /> %18$s</label>'
       . '<small>%19$s</small></div>'
-      . '</div>',
+      . '</div></div>',
       lang('cmd_img_boarder_width'),
       BorderModel::MAX_WIDTH,
       $width,
@@ -134,7 +138,8 @@ class EventHandlers extends Base {
       lang('cmd_img_boarder_shadow'),
       ($border && $border->shadow === 'Y') ? ' checked="checked"' : '',
       lang('cmd_img_boarder_shadow_on'),
-      lang('about_img_boarder_shadow')
+      lang('about_img_boarder_shadow'),
+      lang('cmd_img_boarder')
     );
     \Context::loadFile(['./modules/img_boarder/tpl/css/write.css', 'all']);
     \Context::loadFile(['./modules/img_boarder/tpl/js/write.js', 'body']);
