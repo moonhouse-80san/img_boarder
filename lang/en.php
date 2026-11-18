@@ -9,6 +9,8 @@ $lang->cmd_img_boarder_width = 'Body image border width';
 $lang->about_img_boarder_width = 'Border width of images in the body. (0 = no border, max %d)';
 $lang->cmd_img_boarder_style = 'Body image border style';
 $lang->about_img_boarder_style = 'Choose CSS border-style: solid, double, dashed, etc.';
+$lang->cmd_img_boarder_radius = 'Body image border radius';
+$lang->about_img_boarder_radius = 'Roundness of the image corners. (0 = square, max %d)';
 $lang->cmd_img_boarder_color = 'Body image border color';
 $lang->about_img_boarder_color = 'Pick a color or type a hex code like #ffffff. (default %s)';
 $lang->cmd_img_boarder_shadow = 'Body image shadow';

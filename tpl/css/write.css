@@ -1,4 +1,5 @@
-.ib_box {
+/* Img_boarder write option box. Prefixed with #ibBox + resets so board skin CSS (button/input/label/select) can not break it. */
+#ibBox.ib_box {
   margin: 10px 0;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
@@ -7,30 +8,37 @@
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
+  float: none;
+  clear: both;
+  text-align: left;
 }
-.ib_box:not(.is-collapsed) {
-  width: 100%;
-}
-.ib_box .ib_toggle {
+#ibBox.ib_box[hidden] { display: none; }
+#ibBox.ib_box:not(.is-collapsed) { width: 100%; }
+#ibBox.ib_box *, #ibBox.ib_box *::before, #ibBox.ib_box *::after { box-sizing: border-box; }
+#ibBox .ib_toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin: 0;
   padding: 10px 14px;
   border: 0;
+  border-radius: 0;
   background: transparent;
+  box-shadow: none;
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
+  line-height: 1.4;
   text-align: left;
   color: inherit;
-  box-sizing: border-box;
   width: auto;
+  height: auto;
+  min-width: 0;
   max-width: 100%;
   white-space: nowrap;
 }
-.ib_box .ib_toggle:hover { background: #f0f0f0; }
-.ib_box .ib_toggle_state {
+#ibBox .ib_toggle:hover { background: #f0f0f0; }
+#ibBox .ib_toggle_state {
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -39,32 +47,84 @@
   border: 1px solid transparent;
 }
 /* collapsed → Open */
-.ib_box.is-collapsed .ib_toggle_state {
+#ibBox.is-collapsed .ib_toggle_state {
   color: #1a6fd4;
   background: #e8f1fc;
   border-color: #b7d4f5;
 }
 /* open → Close */
-.ib_box:not(.is-collapsed) .ib_toggle_state {
+#ibBox:not(.is-collapsed) .ib_toggle_state {
   color: #8a5a00;
   background: #fff4e0;
   border-color: #f0d9a8;
 }
-.ib_box .ib_body { display: none; padding: 0 14px 12px; border-top: 1px solid #e5e5e5; }
-.ib_box:not(.is-collapsed) .ib_body { display: block; padding-top: 12px; }
-.ib_box .ib_row { margin: 0 0 12px; }
-.ib_box .ib_row:last-child { margin-bottom: 0; }
-.ib_box label { display: block; margin-bottom: 6px; font-weight: 700; }
-.ib_box label.ib_chk { display: inline-block; margin: 0; font-weight: 400; cursor: pointer; }
-.ib_box input[type=number], .ib_box input[type=text], .ib_box select {
-  height: 34px; padding: 0 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; box-sizing: border-box;
+#ibBox .ib_body { display: none; padding: 0 14px 12px; border-top: 1px solid #e5e5e5; }
+#ibBox:not(.is-collapsed) .ib_body { display: block; padding-top: 12px; }
+#ibBox .ib_row { margin: 0 0 12px; padding: 0; border: 0; }
+#ibBox .ib_row:last-child { margin-bottom: 0; }
+#ibBox label {
+  display: block; float: none; width: auto; margin: 0 0 6px; padding: 0;
+  font-weight: 700; line-height: 1.4; color: inherit;
 }
-.ib_box input[type=number] { width: 90px; }
-.ib_box input[type=text] { width: 140px; }
-.ib_box select { min-width: 140px; }
-.ib_box .ib_color { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.ib_box input[type=color] { width: 34px; height: 34px; padding: 0; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
-.ib_box .ib_chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.ib_box .ib_chip { width: 22px; height: 22px; padding: 0; border: 1px solid #ccc; border-radius: 50%; cursor: pointer; }
-.ib_box .ib_chip.on { outline: 2px solid #444; outline-offset: 1px; }
-.ib_box small { display: block; margin-top: 6px; color: #888; }
+#ibBox label.ib_chk { display: inline-block; margin: 0; font-weight: 400; cursor: pointer; }
+#ibBox input[type=number], #ibBox input[type=text] { display: inline-block; }
+#ibBox input[type=number], #ibBox input[type=text], #ibBox select {
+  float: none; height: 34px; margin: 0; padding: 0 10px;
+  border: 1px solid #ccc; border-radius: 6px; background: #fff; color: #333;
+  font-size: 14px; line-height: normal; box-shadow: none; vertical-align: middle;
+}
+#ibBox input[type=number] { width: 90px; }
+#ibBox input[type=text] { width: 140px; min-width: 0; }
+#ibBox select { min-width: 140px; width: auto; }
+#ibBox .ib_color { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#ibBox input[type=color] {
+  -webkit-appearance: none; appearance: none;
+  display: inline-block; float: none; flex: 0 0 34px;
+  width: 34px; height: 34px; min-width: 34px; margin: 0; padding: 2px;
+  border: 1px solid #ccc; border-radius: 6px; background: #fff; box-shadow: none; cursor: pointer;
+}
+#ibBox input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+#ibBox input[type=color]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+#ibBox input[type=color]::-moz-color-swatch { border: 0; border-radius: 4px; }
+#ibBox .ib_chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#ibBox .ib_chip {
+  -webkit-appearance: none; appearance: none;
+  display: inline-block; float: none; flex: 0 0 22px;
+  width: 22px; height: 22px; min-width: 22px; max-width: 22px; min-height: 22px; max-height: 22px;
+  margin: 0; padding: 0; border: 1px solid #ccc; border-radius: 50%;
+  font-size: 0; line-height: 0; box-shadow: none; text-indent: -9999px; overflow: hidden; cursor: pointer;
+}
+#ibBox .ib_chip::before, #ibBox .ib_chip::after { content: none; }
+#ibBox .ib_chip.on { outline: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #444; }
+#ibBox small { display: block; margin: 6px 0 0; color: #888; font-size: 12px; line-height: 1.4; }
+/* Hard overrides: board skins often force display/float/background with !important */
+#ibBox .ib_row { display: flow-root !important; }
+#ibBox .ib_row > input[type=number] {
+  display: inline-block !important; float: none !important; position: static !important;
+  width: 90px !important; margin: 0 6px 0 0 !important; vertical-align: middle !important;
+}
+/* select: show the native select (width follows the longest option) and hide the skin's custom dropdown clone */
+#ibBox .ib_row > select {
+  display: inline-block !important; position: static !important; float: none !important;
+  visibility: visible !important; opacity: 1 !important; clip: auto !important; pointer-events: auto !important;
+  -webkit-appearance: menulist !important; appearance: auto !important;
+  width: auto !important; min-width: 0 !important; max-width: 100% !important; height: 34px !important;
+  margin: 0 !important; padding: 0 10px !important; line-height: normal !important; vertical-align: middle;
+}
+#ibBox .ib_row > select + :not(small) { display: none !important; }
+#ibBox label.ib_chk { display: inline-flex !important; align-items: center; gap: 6px; float: none !important; width: auto !important; }
+#ibBox label.ib_chk input[type=checkbox] {
+  -webkit-appearance: checkbox !important; appearance: auto !important;
+  display: inline-block !important; float: none !important; position: static !important;
+  width: 16px !important; height: 16px !important; margin: 0 !important; opacity: 1 !important; visibility: visible !important;
+}
+#ibBox .ib_color > input[type=text] { display: inline-block !important; float: none !important; width: 140px !important; margin: 0 !important; }
+#ibBox .ib_color > input[type=color] {
+  display: inline-block !important; float: none !important; width: 34px !important; height: 34px !important;
+  min-width: 34px !important; padding: 2px !important; margin: 0 !important;
+}
+#ibBox .ib_chip {
+  display: inline-block !important; float: none !important; width: 22px !important; height: 22px !important;
+  min-width: 22px !important; padding: 0 !important; margin: 0 !important; border-radius: 50% !important;
+  background: var(--ib-c) !important; background-image: none !important;
+}

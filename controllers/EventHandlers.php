@@ -46,11 +46,15 @@ class EventHandlers extends Base {
       if ($width > 0) {
         $cssParts[] = sprintf('border:%dpx %s %s', $width, $style, $color);
       }
+      $radius = max(0, min(BorderModel::MAX_RADIUS, intval($border->border_radius ?? 0)));
+      if ($radius > 0) {
+        $cssParts[] = sprintf('border-radius:%dpx', $radius);
+      }
       if (($border->shadow ?? 'N') === 'Y') {
         // Keep shadow inside-ish; still paints outside but does not affect layout width.
         $cssParts[] = 'box-shadow:0 2px 8px rgba(0,0,0,.35)';
       }
-      if ($width <= 0 && ($border->shadow ?? 'N') !== 'Y') {
+      if ($width <= 0 && $radius <= 0 && ($border->shadow ?? 'N') !== 'Y') {
         return;
       }
       $cssValue = implode(';', $cssParts) . ';';
@@ -86,12 +90,13 @@ class EventHandlers extends Base {
     $currentStyle = ($border && isset(BorderModel::STYLES[$border->border_style ?? '']))
       ? $border->border_style
       : BorderModel::DEFAULT_STYLE;
+    $radius = $border ? max(0, min(BorderModel::MAX_RADIUS, intval($border->border_radius ?? 0))) : 0;
     $minWidth = $border && isset($border->min_image_width)
       ? max(0, intval($border->min_image_width))
       : BorderModel::DEFAULT_MIN_WIDTH;
     $chips = '';
     foreach (['#ffb3b3', '#ffd3a8', '#fff3a8', '#c4e8c8', '#bbdcff', '#a8b4e8', '#dbbcff', '#222222', '#ffffff'] as $chip) {
-      $chips .= sprintf('<button type="button" class="ib_chip" data-color="%1$s" style="background:%1$s" title="%1$s"></button>', $chip);
+      $chips .= sprintf('<button type="button" class="ib_chip" data-color="%1$s" style="--ib-c:%1$s;background:%1$s" title="%1$s"></button>', $chip);
     }
     $styleOptions = '';
     foreach (BorderModel::STYLES as $value => $label) {
@@ -110,17 +115,20 @@ class EventHandlers extends Base {
       . '<div class="ib_body">'
       . '<input type="hidden" name="ib_use" value="Y" />'
       . '<div class="ib_row"><label for="ibWidth">%1$s</label>'
-      . '<input type="number" id="ibWidth" name="ib_width" min="0" max="%2$d" step="1" value="%3$d" /> px'
+      . '<input type="number" id="ibWidth" name="ib_width" min="0" max="%2$d" step="1" value="%3$d" /><span class="ib_unit">px</span>'
       . '<small>%4$s</small></div>'
       . '<div class="ib_row"><label for="ibStyle">%5$s</label>'
       . '<select id="ibStyle" name="ib_style">%6$s</select>'
       . '<small>%7$s</small></div>'
+      . '<div class="ib_row"><label for="ibRadius">%21$s</label>'
+      . '<input type="number" id="ibRadius" name="ib_radius" min="0" max="%22$d" step="1" value="%23$d" /><span class="ib_unit">px</span>'
+      . '<small>%24$s</small></div>'
       . '<div class="ib_row"><label for="ibColor">%8$s</label>'
       . '<div class="ib_color"><input type="text" id="ibColor" name="ib_color" maxlength="9" placeholder="%9$s" value="%10$s" />'
       . '<input type="color" id="ibPicker" value="%10$s" title="%8$s" /><span class="ib_chips">%11$s</span></div>'
       . '<small>%12$s</small></div>'
       . '<div class="ib_row"><label for="ibMinWidth">%13$s</label>'
-      . '<input type="number" id="ibMinWidth" name="ib_min_width" min="0" step="1" value="%14$d" /> px'
+      . '<input type="number" id="ibMinWidth" name="ib_min_width" min="0" step="1" value="%14$d" /><span class="ib_unit">px</span>'
       . '<small>%15$s</small></div>'
       . '<div class="ib_row"><label>%16$s</label>'
       . '<label class="ib_chk"><input type="checkbox" id="ibShadow" name="ib_shadow" value="Y"%17$s /> %18$s</label>'
@@ -145,7 +153,11 @@ class EventHandlers extends Base {
       ($border && $border->shadow === 'Y') ? ' checked="checked"' : '',
       lang('cmd_img_boarder_shadow_on'),
       lang('about_img_boarder_shadow'),
-      lang('cmd_img_boarder')
+      lang('cmd_img_boarder'),
+      lang('cmd_img_boarder_radius'),
+      BorderModel::MAX_RADIUS,
+      $radius,
+      sprintf(lang('about_img_boarder_radius'), BorderModel::MAX_RADIUS)
     );
     \Context::loadFile(['./modules/img_boarder/tpl/css/write.css', 'all']);
     \Context::loadFile(['./modules/img_boarder/tpl/js/write.js', 'body']);

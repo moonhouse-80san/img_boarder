@@ -7,6 +7,7 @@
     <column name="border_width" var="border_width" />
     <column name="border_color" var="border_color" />
     <column name="border_style" var="border_style" />
+    <column name="border_radius" var="border_radius" />
     <column name="shadow" var="shadow" />
     <column name="min_image_width" var="min_image_width" />
   </columns>

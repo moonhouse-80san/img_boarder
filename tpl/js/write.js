@@ -72,6 +72,15 @@ jQuery(function ($) {
     $width.val(Math.min(n, parseInt($width.attr('max'), 10) || 20));
   });
 
+  $('#ibRadius').on('change blur', function () {
+    var $r = $(this);
+    var n = parseInt($r.val(), 10);
+    if (isNaN(n) || n < 0) {
+      n = 0;
+    }
+    $r.val(Math.min(n, parseInt($r.attr('max'), 10) || 100));
+  });
+
   $color.on('input', function () {
     var v = $.trim($color.val());
     if (isHex(v)) {

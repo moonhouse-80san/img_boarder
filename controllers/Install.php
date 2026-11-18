@@ -7,7 +7,7 @@ use Rhymix\Modules\Img_boarder\Models\Border as BorderModel;
 
 /**
  * Img_boarder install/update handler.
- * Ensures min_image_width column exists on existing installs.
+ * Ensures min_image_width / border_radius columns exist on existing installs.
  */
 class Install extends Base {
   /**
@@ -26,7 +26,8 @@ class Install extends Base {
    */
   public function checkUpdate() {
     $oDB = DB::getInstance();
-    return $oDB->isTableExists('img_boarder') && !$oDB->isColumnExists('img_boarder', 'min_image_width');
+    return $oDB->isTableExists('img_boarder')
+      && (!$oDB->isColumnExists('img_boarder', 'min_image_width') || !$oDB->isColumnExists('img_boarder', 'border_radius'));
   }
 
   /**
@@ -36,6 +37,7 @@ class Install extends Base {
    */
   public function moduleUpdate() {
     $this->_ensureMinImageWidthColumn();
+    $this->_ensureBorderRadiusColumn();
     return new \BaseObject();
   }
 
@@ -59,5 +61,18 @@ class Install extends Base {
       return;
     }
     $oDB->addColumn('img_boarder', 'min_image_width', 'number', 11, BorderModel::DEFAULT_MIN_WIDTH, true);
+  }
+
+  /**
+   * Add border_radius column if missing (existing installs).
+   *
+   * @return void
+   */
+  protected function _ensureBorderRadiusColumn(): void {
+    $oDB = DB::getInstance();
+    if (!$oDB->isTableExists('img_boarder') || $oDB->isColumnExists('img_boarder', 'border_radius')) {
+      return;
+    }
+    $oDB->addColumn('img_boarder', 'border_radius', 'number', 11, 0, true);
   }
 }

@@ -8,6 +8,7 @@
     <column name="border_width" var="border_width" default="0" />
     <column name="border_color" var="border_color" default="#ffaa56" />
     <column name="border_style" var="border_style" default="solid" />
+    <column name="border_radius" var="border_radius" default="0" />
     <column name="shadow" var="shadow" default="N" />
     <column name="min_image_width" var="min_image_width" default="350" />
     <column name="regdate" var="regdate" default="curdate()" />

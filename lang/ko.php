@@ -9,6 +9,8 @@ $lang->cmd_img_boarder_width = '본문 이미지 테두리 굵기';
 $lang->about_img_boarder_width = '본문에 넣은 이미지의 테두리 굵기입니다. (0 = 테두리 없음, 최대 %d)';
 $lang->cmd_img_boarder_style = '본문 이미지 테두리 모양';
 $lang->about_img_boarder_style = '실선, 이중선, 점선 등 CSS border-style을 선택합니다.';
+$lang->cmd_img_boarder_radius = '본문 이미지 테두리 곡선';
+$lang->about_img_boarder_radius = '테두리 모서리의 둥근 정도입니다. (0 = 직각, 최대 %d)';
 $lang->cmd_img_boarder_color = '본문 이미지 테두리 색상';
 $lang->about_img_boarder_color = '색상표에서 고르거나 #ffffff 처럼 직접 입력합니다. (기본 %s)';
 $lang->cmd_img_boarder_shadow = '본문 이미지 그림자';

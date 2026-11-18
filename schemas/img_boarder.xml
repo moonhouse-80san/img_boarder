@@ -4,6 +4,7 @@
   <column name="border_width" type="number" size="11" default="0" notnull="notnull" />
   <column name="border_color" type="varchar" size="9" default="#ffaa56" notnull="notnull" />
   <column name="border_style" type="varchar" size="16" default="solid" notnull="notnull" />
+  <column name="border_radius" type="number" size="11" default="0" notnull="notnull" />
   <column name="shadow" type="char" size="1" default="N" notnull="notnull" />
   <column name="min_image_width" type="number" size="11" default="350" notnull="notnull" />
   <column name="regdate" type="date" />
