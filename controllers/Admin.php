@@ -30,6 +30,14 @@ class Admin extends Base {
     }
     usort($boards, fn($a, $b) => strnatcasecmp($a->title, $b->title));
     \Context::set('boards', $boards);
+    $groups = [];
+    foreach (\MemberModel::getGroups() ?: [] as $group) {
+      $groups[] = (object)[
+        'group_srl' => intval($group->group_srl),
+        'title' => html_entity_decode(\Context::replaceUserLang($group->title, true), ENT_QUOTES) ?: strval($group->group_srl),
+      ];
+    }
+    \Context::set('groups', $groups);
     $this->setTemplateFile('config');
   }
 
@@ -39,6 +47,7 @@ class Admin extends Base {
   public function procImg_boarderAdminInsertConfig() {
     $config = ConfigModel::getConfig();
     $config->target_srls = array_values(array_unique(array_filter(array_map('intval', (array)\Context::get('target_srls')))));
+    $config->upload_group_srls = array_values(array_unique(array_filter(array_map('intval', (array)\Context::get('upload_group_srls')))));
 
     $output = ConfigModel::setConfig($config);
     if (!$output->toBool()) {

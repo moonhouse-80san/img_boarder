@@ -3,6 +3,8 @@
   <actions>
     <action name="dispImg_boarderAdminConfig" class="Controllers\Admin" permission="root" menu-name="img_boarder" admin-index="true" />
     <action name="procImg_boarderAdminInsertConfig" class="Controllers\Admin" permission="root" />
+    <action name="procImg_boarderUploadFrame" class="Controllers\Frame" />
+    <action name="procImg_boarderDeleteFrame" class="Controllers\Frame" />
   </actions>
 
   <eventHandlers>

@@ -59,15 +59,51 @@
           <p class="ib-empty">@lang('msg_img_boarder_no_board')</p>
         @endif
 
-        <div class="ib-foot">
-          <button type="submit" class="x_btn x_btn-primary">@lang('cmd_save')</button>
-        </div>
       </div>
+    </div>
+
+    <div class="ib-panel">
+      <div class="ib-head">
+        <h2>@lang('cmd_img_boarder_upload_groups')</h2><span>@lang('cmd_img_boarder_upload_groups_sub')</span>
+      </div>
+      <div class="ib-body">
+        <div class="ib-info">{!! lang('about_img_boarder_upload_groups') !!}</div>
+        @if (count($groups))
+          <div class="ib-grid" id="ibGroupGrid">
+            @foreach ($groups as $group)
+              <label class="ib-card">
+                <input type="checkbox" name="upload_group_srls[]" value="{{ $group->group_srl }}" @checked(in_array($group->group_srl, $config->upload_group_srls, true)) />
+                <strong>{{ $group->title }}</strong>
+                <small>group_srl {{ $group->group_srl }}</small>
+              </label>
+            @endforeach
+          </div>
+        @else
+          <p class="ib-empty">@lang('msg_img_boarder_no_group')</p>
+        @endif
+      </div>
+    </div>
+
+    <div class="ib-foot">
+      <button type="submit" class="x_btn x_btn-primary">@lang('cmd_save')</button>
     </div>
   </form>
 </div>
 
 <script>
+  (function () {
+    var groupGrid = document.getElementById('ibGroupGrid');
+    if (groupGrid) {
+      var syncGroups = function () {
+        Array.prototype.forEach.call(groupGrid.querySelectorAll('.ib-card'), function (card) {
+          card.classList.toggle('is-selected', card.querySelector('input').checked);
+        });
+      };
+      groupGrid.addEventListener('change', syncGroups);
+      syncGroups();
+    }
+  })();
+
   (function () {
     var grid = document.getElementById('ibGrid');
     if (!grid) {

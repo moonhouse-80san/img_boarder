@@ -8,6 +8,9 @@
     <column name="border_color" var="border_color" />
     <column name="border_style" var="border_style" />
     <column name="border_radius" var="border_radius" />
+    <column name="frame_srl" var="frame_srl" />
+    <column name="frame_slice" var="frame_slice" />
+    <column name="frame_repeat" var="frame_repeat" />
     <column name="shadow" var="shadow" />
     <column name="min_image_width" var="min_image_width" />
   </columns>

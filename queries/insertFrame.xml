@@ -1,0 +1,16 @@
+<query id="insertFrame" action="insert">
+  <tables>
+    <table name="img_boarder_frames" />
+  </tables>
+  <columns>
+    <column name="frame_srl" var="frame_srl" notnull="notnull" />
+    <column name="member_srl" var="member_srl" notnull="notnull" />
+    <column name="file_name" var="file_name" notnull="notnull" />
+    <column name="orig_name" var="orig_name" />
+    <column name="img_width" var="img_width" default="0" />
+    <column name="img_height" var="img_height" default="0" />
+    <column name="slice" var="slice" default="30" />
+    <column name="repeat_mode" var="repeat_mode" default="stretch" />
+    <column name="regdate" var="regdate" default="curdate()" />
+  </columns>
+</query>

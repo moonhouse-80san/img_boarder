@@ -1,0 +1,12 @@
+<query id="getAllFrames" action="select">
+  <tables>
+    <table name="img_boarder_frames" />
+  </tables>
+  <columns>
+    <column name="*" />
+  </columns>
+  <navigation>
+    <index var="sort_index" default="frame_srl" order="desc" />
+    <list_count var="list_count" default="200" />
+  </navigation>
+</query>

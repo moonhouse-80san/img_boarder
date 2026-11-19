@@ -22,6 +22,7 @@ class Config {
   /**
    * Get module config.
    * - target_srls: board module_srl list (empty = all boards)
+   * - upload_group_srls: member group_srl list allowed to upload border images (empty = admin only)
    *
    * @return object
    */
@@ -29,6 +30,7 @@ class Config {
     if (self::$_cache === null) {
       self::$_cache = ModuleModel::getModuleConfig('img_boarder') ?: new \stdClass;
       self::$_cache->target_srls = array_map('intval', (array)(self::$_cache->target_srls ?? []));
+      self::$_cache->upload_group_srls = array_map('intval', (array)(self::$_cache->upload_group_srls ?? []));
     }
     return self::$_cache;
   }

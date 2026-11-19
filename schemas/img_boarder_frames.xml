@@ -1,0 +1,11 @@
+<table name="img_boarder_frames">
+  <column name="frame_srl" type="number" size="11" notnull="notnull" primary_key="primary_key" />
+  <column name="member_srl" type="number" size="11" default="0" notnull="notnull" index="idx_member_srl" />
+  <column name="file_name" type="varchar" size="40" notnull="notnull" />
+  <column name="orig_name" type="varchar" size="128" />
+  <column name="img_width" type="number" size="11" default="0" notnull="notnull" />
+  <column name="img_height" type="number" size="11" default="0" notnull="notnull" />
+  <column name="slice" type="number" size="11" default="30" notnull="notnull" />
+  <column name="repeat_mode" type="varchar" size="8" default="stretch" notnull="notnull" />
+  <column name="regdate" type="date" />
+</table>

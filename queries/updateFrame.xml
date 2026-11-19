@@ -1,0 +1,13 @@
+<query id="updateFrame" action="update">
+  <tables>
+    <table name="img_boarder_frames" />
+  </tables>
+  <columns>
+    <column name="orig_name" var="orig_name" />
+    <column name="slice" var="slice" />
+    <column name="repeat_mode" var="repeat_mode" />
+  </columns>
+  <conditions>
+    <condition operation="equal" column="frame_srl" var="frame_srl" notnull="notnull" />
+  </conditions>
+</query>
