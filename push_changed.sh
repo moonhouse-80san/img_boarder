@@ -9,4 +9,5 @@ fi
 
 git add .
 git commit -m "$msg" || exit 1
+git pull --rebase origin master || exit 1
 git push origin master
