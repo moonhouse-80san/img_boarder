@@ -161,7 +161,7 @@ class Frame {
   }
 
   /**
-   * Whether the current visitor may delete a frame (its uploader or an admin). Built-in frames are never deletable.
+   * Whether the current visitor may delete a frame: its uploader or an admin. Built-in frames (member_srl 0) are admin-only.
    *
    * @param \stdClass $frame
    * @return bool
@@ -169,7 +169,7 @@ class Frame {
   public static function canDelete(\stdClass $frame): bool {
     $logged = \Context::get('logged_info');
     $memberSrl = intval($logged->member_srl ?? 0);
-    return $memberSrl > 0 && intval($frame->member_srl) > 0 && (intval($frame->member_srl) === $memberSrl || ($logged->is_admin ?? 'N') === 'Y');
+    return $memberSrl > 0 && (intval($frame->member_srl) === $memberSrl || ($logged->is_admin ?? 'N') === 'Y');
   }
 
   /**
@@ -227,5 +227,11 @@ class Frame {
       throw new QueryError($output->getMessage());
     }
     \Rhymix\Framework\Storage::delete(self::getDir() . $frame->file_name);
+    // A deleted built-in frame must not come back on the next module update.
+    if (intval($frame->member_srl) === 0 && isset(self::BUILTINS[$frame->file_name])) {
+      $config = Config::getConfig();
+      $config->deleted_builtins = array_values(array_unique(array_merge($config->deleted_builtins, [$frame->file_name])));
+      Config::setConfig($config);
+    }
   }
 }

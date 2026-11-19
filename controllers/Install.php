@@ -4,6 +4,7 @@ namespace Rhymix\Modules\Img_boarder\Controllers;
 
 use Rhymix\Framework\DB;
 use Rhymix\Modules\Img_boarder\Models\Border as BorderModel;
+use Rhymix\Modules\Img_boarder\Models\Config as ConfigModel;
 use Rhymix\Modules\Img_boarder\Models\Frame as FrameModel;
 
 /**
@@ -171,13 +172,13 @@ class Install extends Base {
   }
 
   /**
-   * Built-in frames (FrameModel::BUILTINS) not registered yet.
+   * Built-in frames (FrameModel::BUILTINS) not registered yet and not deleted by an admin.
    *
    * @return string[] stored file names
    */
   protected function _missingBuiltins(): array {
     $registered = array_column(FrameModel::getSystem(), 'file_name');
-    return array_values(array_diff(array_keys(FrameModel::BUILTINS), $registered));
+    return array_values(array_diff(array_keys(FrameModel::BUILTINS), $registered, ConfigModel::getConfig()->deleted_builtins));
   }
 
   /**
