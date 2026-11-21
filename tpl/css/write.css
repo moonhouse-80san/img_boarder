@@ -200,3 +200,6 @@
 #ibBox .ib_item_panel.is-off .ib_item_fields { opacity: .45; pointer-events: none; }
 #ibBox .ib_item_panel.is-frame .ib_i_line { display: none !important; }
 #ibBox .ib_item_opts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* No border image selected (line border): corner size / fill mode do not apply, hide them */
+#ibBox:not(.is-frame) .ib_upload .ib_upload_opt { display: none !important; }
+#ibBox .ib_item_panel:not(.is-frame) .ib_item_opts { display: none !important; }
