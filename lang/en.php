@@ -59,3 +59,4 @@ $lang->about_img_boarder_item_on = 'When off, the default is used. When on with 
 $lang->cmd_img_boarder_items_all = 'Select all';
 $lang->cmd_img_boarder_items_multi = 'Select multiple';
 $lang->msg_img_boarder_items_selected = '%d images selected - the settings below apply to all of them.';
+$lang->cmd_img_boarder_ver_latest = 'Latest';
