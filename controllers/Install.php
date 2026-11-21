@@ -9,7 +9,7 @@ use Rhymix\Modules\Img_boarder\Models\Frame as FrameModel;
 
 /**
  * Img_boarder install/update handler.
- * Ensures min_image_width / border_radius / frame_srl columns and the frames table exist on existing installs.
+ * Ensures min_image_width / border_radius / frame_srl columns and the frames / per-image items tables exist on existing installs.
  */
 class Install extends Base {
   /**
@@ -33,6 +33,7 @@ class Install extends Base {
       return false;
     }
     return !$oDB->isTableExists('img_boarder_frames')
+      || !$oDB->isTableExists('img_boarder_items')
       || !$oDB->isColumnExists('img_boarder', 'min_image_width')
       || !$oDB->isColumnExists('img_boarder', 'border_radius')
       || !$oDB->isColumnExists('img_boarder', 'frame_srl')
@@ -56,6 +57,9 @@ class Install extends Base {
     $oDB = DB::getInstance();
     if (!$oDB->isTableExists('img_boarder_frames')) {
       $oDB->createTable($this->module_path . 'schemas/img_boarder_frames.xml');
+    }
+    if (!$oDB->isTableExists('img_boarder_items')) {
+      $oDB->createTable($this->module_path . 'schemas/img_boarder_items.xml');
     }
     $this->_renameBuiltins();
     $this->_ensureDefaultFrames();

@@ -1,0 +1,19 @@
+<query id="insertItem" action="insert">
+  <tables>
+    <table name="img_boarder_items" />
+  </tables>
+  <columns>
+    <column name="item_srl" var="item_srl" notnull="notnull" />
+    <column name="document_srl" var="document_srl" notnull="notnull" />
+    <column name="img_key" var="img_key" notnull="notnull" />
+    <column name="border_width" var="border_width" default="0" />
+    <column name="border_color" var="border_color" default="#ffaa56" />
+    <column name="border_style" var="border_style" default="solid" />
+    <column name="border_radius" var="border_radius" default="0" />
+    <column name="frame_srl" var="frame_srl" default="0" />
+    <column name="frame_slice" var="frame_slice" default="0" />
+    <column name="frame_repeat" var="frame_repeat" default="stretch" />
+    <column name="shadow" var="shadow" default="N" />
+    <column name="regdate" var="regdate" default="curdate()" />
+  </columns>
+</query>

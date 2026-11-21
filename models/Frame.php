@@ -187,7 +187,7 @@ class Frame {
   }
 
   /**
-   * How many documents use this frame.
+   * How many documents / per-image overrides use this frame.
    *
    * @param int $frameSrl
    * @return int
@@ -195,11 +195,15 @@ class Frame {
   public static function countUse(int $frameSrl): int {
     $args = new \stdClass;
     $args->frame_srl = $frameSrl;
-    $output = executeQuery('img_boarder.countFrameUse', $args);
-    if (!$output->toBool()) {
-      throw new QueryError($output->getMessage());
+    $total = 0;
+    foreach (['countFrameUse', 'countItemFrameUse'] as $query) {
+      $output = executeQuery('img_boarder.' . $query, $args);
+      if (!$output->toBool()) {
+        throw new QueryError($output->getMessage());
+      }
+      $total += intval($output->data->count ?? 0);
     }
-    return intval($output->data->count ?? 0);
+    return $total;
   }
 
   /**

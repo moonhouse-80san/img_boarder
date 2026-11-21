@@ -78,6 +78,9 @@ jQuery(function ($) {
     e.preventDefault();
     $box.toggleClass('is-collapsed');
     syncToggleLabel();
+    if (!$box.hasClass('is-collapsed')) {
+      refreshImages();
+    }
   });
 
   $width.on('change blur', function () {
@@ -194,7 +197,7 @@ jQuery(function ($) {
     $preview.hide();
   }
 
-  $frames.on('mouseenter', '.ib_frame img', function () {
+  $box.on('mouseenter', '.ib_frames .ib_frame img', function () {
     var rect = this.getBoundingClientRect();
     var gap = 10;
     // Above the thumbnail, centered on it; below only when there is no room above.
@@ -205,10 +208,256 @@ jQuery(function ($) {
     var left = rect.left + rect.width / 2 - PREVIEW_SIZE / 2;
     left = Math.max(4, Math.min(left, window.innerWidth - PREVIEW_SIZE - 4));
     $preview.attr('src', this.src).css({ left: left, top: top }).show();
-  }).on('mouseleave', '.ib_frame img', hidePreview);
+  }).on('mouseleave', '.ib_frames .ib_frame img', hidePreview);
   $(window).on('scroll blur', hidePreview);
 
   syncFrameMode();
+
+  // ---- Per-image settings: pick a body image, override the document default for that image only.
+  var $imgs = $('#ibImgs');
+  var $panel = $('#ibItemPanel');
+  var $itemsInput = $('#ibItems');
+  var $itemFrames = $('#ibiFrames');
+  var $itemColor = $('#ibiColor');
+  var $itemPicker = $('#ibiPicker');
+  var $itemChips = $panel.find('.ib_ichip');
+  var items = {};      // img key -> {width, color, style, radius, shadow, frame, slice, repeat}
+  var imgList = [];    // [{key, url}] body images found in the editor
+  var current = '';    // key of the image shown in the panel
+  var MAX_WIDTH = parseInt($width.attr('max'), 10) || 20;
+  var MAX_RADIUS = parseInt($('#ibRadius').attr('max'), 10) || 100;
+
+  try {
+    $.each(JSON.parse($imgs.attr('data-items') || '[]'), function (i, it) {
+      items[it.key] = it;
+    });
+  } catch (e) {}
+
+  function clamp(v, max) {
+    var n = parseInt(v, 10);
+    return isNaN(n) || n < 0 ? 0 : Math.min(n, max);
+  }
+
+  // Same key rule as the server: file name of the src, without query/hash, URL-decoded.
+  function keyOf(src) {
+    var u = String(src || '').split('#')[0].split('?')[0];
+    u = u.substring(u.lastIndexOf('/') + 1);
+    try {
+      u = decodeURIComponent(u);
+    } catch (e) {}
+    return u;
+  }
+
+  function getContent() {
+    var $form = $box.closest('form');
+    var seq = $form.attr('editor_sequence') || $('[data-editor-sequence]').first().data('editorSequence');
+    try {
+      if (seq && window.editorGetContent) {
+        return String(window.editorGetContent(seq) || '');
+      }
+    } catch (e) {}
+    return String($form.find('[name="content"]').val() || '');
+  }
+
+  function syncItemsInput() {
+    var list = [];
+    $.each(items, function (key, it) {
+      list.push($.extend({ key: key }, it));
+    });
+    $itemsInput.val(JSON.stringify(list));
+  }
+
+  function mainValues() {
+    var color = $.trim($color.val());
+    return {
+      width: clamp($width.val(), MAX_WIDTH),
+      color: isHex(color) ? color : $color.attr('placeholder'),
+      style: $('#ibStyle').val(),
+      radius: clamp($('#ibRadius').val(), MAX_RADIUS),
+      shadow: $('#ibShadow').prop('checked') ? 'Y' : 'N',
+      frame: parseInt($box.find('input[name="ib_frame"]:checked').val(), 10) || 0,
+      slice: parseInt($('#ibFrameSlice').val(), 10) || 0,
+      repeat: $('#ibFrameRepeat').val()
+    };
+  }
+
+  function setItemColor(v) {
+    $itemColor.val(v);
+    if (/^#[0-9a-f]{6}$/i.test(v)) {
+      $itemPicker.val(v.toLowerCase());
+    }
+    $itemChips.removeClass('on').filter(function () {
+      return String($(this).data('color')).toLowerCase() === v.toLowerCase();
+    }).addClass('on');
+  }
+
+  // Frame strip of the panel = copy of the main frame list (without delete buttons), so uploads show up here too.
+  function buildItemFrames(selected) {
+    $itemFrames.empty();
+    var $none = $('<span class="ib_frame ib_frame_none"></span>');
+    $none.append($('<label></label>')
+      .append($('<input type="radio" name="ibi_frame" form="ibNoForm" value="0" />'))
+      .append(' ')
+      .append($('<span class="ib_frame_txt"></span>').text($itemFrames.attr('data-none'))));
+    $itemFrames.append($none);
+    $frames.find('.ib_frame').not('.ib_frame_none').each(function () {
+      var $src = $(this);
+      var name = $src.find('.ib_frame_name').text();
+      var $item = $('<span class="ib_frame"></span>').attr({
+        'data-srl': $src.attr('data-srl'),
+        'data-slice': $src.attr('data-slice'),
+        'data-repeat': $src.attr('data-repeat')
+      });
+      $item.append($('<label></label>')
+        .append($('<input type="radio" name="ibi_frame" form="ibNoForm" />').val($src.attr('data-srl')))
+        .append($('<img alt="" />').attr('src', $src.find('img').attr('src')))
+        .append($('<span class="ib_frame_name"></span>').attr('title', name).text(name)));
+      $itemFrames.append($item);
+    });
+    var $radio = $itemFrames.find('input[name="ibi_frame"]').filter(function () {
+      return parseInt(this.value, 10) === selected;
+    }).first();
+    ($radio.length ? $radio : $itemFrames.find('input[name="ibi_frame"]').first()).prop('checked', true);
+    $panel.toggleClass('is-frame', parseInt($itemFrames.find('input:checked').val(), 10) > 0);
+  }
+
+  function writePanel(v) {
+    $('#ibiWidth').val(v.width);
+    $('#ibiStyle').val(v.style);
+    $('#ibiRadius').val(v.radius);
+    $('#ibiShadow').prop('checked', v.shadow === 'Y');
+    $('#ibiSlice').val(v.slice || $('#ibFrameSlice').val());
+    $('#ibiRepeat').val(v.repeat);
+    setItemColor(v.color);
+    buildItemFrames(v.frame);
+  }
+
+  function readPanel() {
+    var color = $.trim($itemColor.val());
+    return {
+      width: clamp($('#ibiWidth').val(), MAX_WIDTH),
+      color: isHex(color) ? color : $itemColor.attr('placeholder'),
+      style: $('#ibiStyle').val(),
+      radius: clamp($('#ibiRadius').val(), MAX_RADIUS),
+      shadow: $('#ibiShadow').prop('checked') ? 'Y' : 'N',
+      frame: parseInt($itemFrames.find('input:checked').val(), 10) || 0,
+      slice: parseInt($('#ibiSlice').val(), 10) || 0,
+      repeat: $('#ibiRepeat').val()
+    };
+  }
+
+  function renderImages() {
+    $imgs.empty();
+    if (!imgList.length) {
+      $imgs.append($('<span class="ib_imgs_empty"></span>').text($imgs.attr('data-empty')));
+      return;
+    }
+    $.each(imgList, function (i, img) {
+      var $thumb = $('<span class="ib_img" role="button" tabindex="0"></span>').attr('data-key', img.key).attr('title', img.key);
+      $thumb.append($('<img alt="" />').attr('src', img.url));
+      $thumb.append($('<span class="ib_img_badge"></span>').text($imgs.attr('data-badge')));
+      $thumb.toggleClass('has', !!items[img.key]).toggleClass('on', img.key === current);
+      $imgs.append($thumb);
+    });
+  }
+
+  function openPanel(key) {
+    current = key;
+    var it = items[key];
+    writePanel(it || mainValues());
+    $('#ibiOn').prop('checked', !!it);
+    $panel.toggleClass('is-off', !it).prop('hidden', false);
+    renderImages();
+  }
+
+  function refreshImages() {
+    var seen = {};
+    imgList = [];
+    var doc = new DOMParser().parseFromString(getContent(), 'text/html');
+    Array.prototype.forEach.call(doc.querySelectorAll('img'), function (img) {
+      var src = img.getAttribute('src') || '';
+      var key = keyOf(src);
+      if (!key || /^data:/i.test(src) || seen[key]) {
+        return;
+      }
+      seen[key] = true;
+      var url = /^(?:[a-z]+:)?\/\/|^\//i.test(src) ? src : (window.request_uri || '/') + src;
+      imgList.push({ key: key, url: url });
+    });
+    if (current && !seen[current]) {
+      current = '';
+      $panel.prop('hidden', true);
+    }
+    renderImages();
+  }
+
+  $('#ibImgsRefresh').on('click', function (e) {
+    e.preventDefault();
+    refreshImages();
+  });
+
+  $imgs.on('click', '.ib_img', function () {
+    openPanel($(this).attr('data-key'));
+  }).on('keydown', '.ib_img', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openPanel($(this).attr('data-key'));
+    }
+  });
+
+  // Any change in the panel: checkbox on = store the panel values for this image, off = back to the document default.
+  $panel.on('input change', 'input, select', function () {
+    if (!current) {
+      return;
+    }
+    var on = $('#ibiOn').prop('checked');
+    if (this.name === 'ibi_frame') {
+      var $item = $(this).closest('.ib_frame');
+      if ($item.attr('data-slice')) {
+        $('#ibiSlice').val($item.attr('data-slice'));
+        $('#ibiRepeat').val($item.attr('data-repeat'));
+      }
+      $panel.toggleClass('is-frame', parseInt(this.value, 10) > 0);
+    }
+    if (this.id === 'ibiColor' && isHex($.trim(this.value))) {
+      setItemColor($.trim(this.value));
+    } else if (this.id === 'ibiPicker') {
+      setItemColor(this.value);
+    }
+    if (on) {
+      items[current] = readPanel();
+    } else {
+      delete items[current];
+    }
+    $panel.toggleClass('is-off', !on);
+    $imgs.find('.ib_img').filter(function () {
+      return $(this).attr('data-key') === current;
+    }).toggleClass('has', on);
+    syncItemsInput();
+  }).on('keydown', 'input', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  });
+
+  $itemColor.on('blur', function () {
+    var v = $.trim($itemColor.val());
+    if (v && v.charAt(0) !== '#') {
+      v = '#' + v;
+    }
+    setItemColor(isHex(v) ? v : $itemColor.attr('placeholder'));
+    if ($('#ibiOn').prop('checked') && current) {
+      items[current] = readPanel();
+      syncItemsInput();
+    }
+  });
+
+  $itemChips.on('click', function () {
+    setItemColor(String($(this).data('color')));
+    $panel.find('#ibiColor').trigger('change');
+  });
+
+  syncItemsInput();
 
   $color.on('input', function () {
     var v = $.trim($color.val());

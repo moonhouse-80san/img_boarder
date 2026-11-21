@@ -1,0 +1,8 @@
+<query id="deleteItems" action="delete">
+  <tables>
+    <table name="img_boarder_items" />
+  </tables>
+  <conditions>
+    <condition operation="equal" column="document_srl" var="document_srl" required="true" />
+  </conditions>
+</query>

@@ -1,0 +1,14 @@
+<table name="img_boarder_items">
+  <column name="item_srl" type="number" size="11" notnull="notnull" primary_key="primary_key" />
+  <column name="document_srl" type="number" size="11" notnull="notnull" index="idx_document_srl" />
+  <column name="img_key" type="varchar" size="255" notnull="notnull" />
+  <column name="border_width" type="number" size="11" default="0" notnull="notnull" />
+  <column name="border_color" type="varchar" size="9" default="#ffaa56" notnull="notnull" />
+  <column name="border_style" type="varchar" size="16" default="solid" notnull="notnull" />
+  <column name="border_radius" type="number" size="11" default="0" notnull="notnull" />
+  <column name="frame_srl" type="number" size="11" default="0" notnull="notnull" />
+  <column name="frame_slice" type="number" size="11" default="0" notnull="notnull" />
+  <column name="frame_repeat" type="varchar" size="8" default="stretch" notnull="notnull" />
+  <column name="shadow" type="char" size="1" default="N" notnull="notnull" />
+  <column name="regdate" type="date" />
+</table>

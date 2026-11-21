@@ -46,6 +46,40 @@ class Border {
   }
 
   /**
+   * Validate one set of border values (document default or a single image override).
+   *
+   * @param array $in Keys: width, color, style, radius, shadow ('Y'), frame (frame_srl), slice, repeat
+   * @return array Column values: border_width, border_color, border_style, border_radius, shadow, frame_srl, frame_slice, frame_repeat
+   */
+  public static function normalize(array $in): array {
+    $color = strval($in['color'] ?? '');
+    if (!preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color)) {
+      $color = self::DEFAULT_COLOR;
+    }
+    $style = strval($in['style'] ?? self::DEFAULT_STYLE);
+    $frame = intval($in['frame'] ?? 0) > 0 ? FrameModel::get(intval($in['frame'])) : null;
+    $frameSlice = 0;
+    $frameRepeat = FrameModel::DEFAULT_REPEAT;
+    if ($frame) {
+      // Per-document corner size / fill mode; falls back to the image's own defaults.
+      $maxSlice = max(1, intval(floor(min(intval($frame->img_width), intval($frame->img_height)) / 2)));
+      $frameSlice = intval($in['slice'] ?? 0);
+      $frameSlice = $frameSlice > 0 ? min($frameSlice, $maxSlice) : intval($frame->slice);
+      $frameRepeat = in_array($in['repeat'] ?? '', FrameModel::REPEATS, true) ? $in['repeat'] : $frame->repeat_mode;
+    }
+    return [
+      'border_width' => max(0, min(self::MAX_WIDTH, intval($in['width'] ?? 0))),
+      'border_color' => $color,
+      'border_style' => isset(self::STYLES[$style]) ? $style : self::DEFAULT_STYLE,
+      'border_radius' => max(0, min(self::MAX_RADIUS, intval($in['radius'] ?? 0))),
+      'shadow' => ($in['shadow'] ?? '') === 'Y' ? 'Y' : 'N',
+      'frame_srl' => $frame ? intval($frame->frame_srl) : 0,
+      'frame_slice' => $frameSlice,
+      'frame_repeat' => $frameRepeat,
+    ];
+  }
+
+  /**
    * Validate request values and insert/update/delete the row.
    * Width 0, radius 0, no shadow and no frame image means "nothing to apply", so the row is removed.
    *
@@ -55,49 +89,30 @@ class Border {
    * @return void
    */
   public static function save(int $documentSrl, int $moduleSrl, object $vars): void {
-    $width = max(0, min(self::MAX_WIDTH, intval($vars->ib_width ?? 0)));
-    $color = strval($vars->ib_color ?? '');
-    if (!preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color)) {
-      $color = self::DEFAULT_COLOR;
-    }
-    $style = strval($vars->ib_style ?? self::DEFAULT_STYLE);
-    if (!isset(self::STYLES[$style])) {
-      $style = self::DEFAULT_STYLE;
-    }
-    $radius = max(0, min(self::MAX_RADIUS, intval($vars->ib_radius ?? 0)));
-    $shadow = ($vars->ib_shadow ?? '') === 'Y' ? 'Y' : 'N';
+    $values = self::normalize([
+      'width' => $vars->ib_width ?? 0,
+      'color' => $vars->ib_color ?? '',
+      'style' => $vars->ib_style ?? self::DEFAULT_STYLE,
+      'radius' => $vars->ib_radius ?? 0,
+      'shadow' => $vars->ib_shadow ?? '',
+      'frame' => $vars->ib_frame ?? 0,
+      'slice' => $vars->ib_frame_slice ?? 0,
+      'repeat' => $vars->ib_frame_repeat ?? '',
+    ]);
     $existing = self::get($documentSrl);
-    $frame = intval($vars->ib_frame ?? 0) > 0 ? FrameModel::get(intval($vars->ib_frame)) : null;
-    $frameSrl = $frame ? intval($frame->frame_srl) : 0;
-    $frameSlice = 0;
-    $frameRepeat = FrameModel::DEFAULT_REPEAT;
-    if ($frame) {
-      // Per-document corner size / fill mode; falls back to the image's own defaults.
-      $maxSlice = max(1, intval(floor(min(intval($frame->img_width), intval($frame->img_height)) / 2)));
-      $frameSlice = intval($vars->ib_frame_slice ?? 0);
-      $frameSlice = $frameSlice > 0 ? min($frameSlice, $maxSlice) : intval($frame->slice);
-      $frameRepeat = in_array($vars->ib_frame_repeat ?? '', FrameModel::REPEATS, true) ? $vars->ib_frame_repeat : $frame->repeat_mode;
-    }
     $minWidth = intval($vars->ib_min_width ?? self::DEFAULT_MIN_WIDTH);
     if ($minWidth < 0) {
       $minWidth = self::DEFAULT_MIN_WIDTH;
     }
-    if ($width === 0 && $radius === 0 && $shadow === 'N' && $frameSrl === 0) {
+    if ($values['border_width'] === 0 && $values['border_radius'] === 0 && $values['shadow'] === 'N' && $values['frame_srl'] === 0) {
       self::delete($documentSrl);
       return;
     }
-    $args = new \stdClass;
-    $args->document_srl = $documentSrl;
-    $args->module_srl = $moduleSrl;
-    $args->border_width = $width;
-    $args->border_color = $color;
-    $args->border_style = $style;
-    $args->border_radius = $radius;
-    $args->frame_srl = $frameSrl;
-    $args->frame_slice = $frameSlice;
-    $args->frame_repeat = $frameRepeat;
-    $args->shadow = $shadow;
-    $args->min_image_width = $minWidth;
+    $args = (object)($values + [
+      'document_srl' => $documentSrl,
+      'module_srl' => $moduleSrl,
+      'min_image_width' => $minWidth,
+    ]);
     $output = executeQuery('img_boarder.' . ($existing ? 'updateBorder' : 'insertBorder'), $args);
     if (!$output->toBool()) {
       throw new QueryError($output->getMessage());

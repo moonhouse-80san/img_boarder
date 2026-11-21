@@ -5,6 +5,7 @@ namespace Rhymix\Modules\Img_boarder\Controllers;
 use Rhymix\Modules\Img_boarder\Models\Border as BorderModel;
 use Rhymix\Modules\Img_boarder\Models\Config as ConfigModel;
 use Rhymix\Modules\Img_boarder\Models\Frame as FrameModel;
+use Rhymix\Modules\Img_boarder\Models\Item as ItemModel;
 
 /**
  * Img_boarder event handlers (triggers).
@@ -30,72 +31,57 @@ class EventHandlers extends Base {
     $border = $documentSrl ? BorderModel::get($documentSrl) : null;
 
     if ($oModule->act === 'dispBoardContent') {
-      if (!$border) {
+      $items = $documentSrl ? ItemModel::getList($documentSrl) : [];
+      if (!$border && !$items) {
         return;
       }
-      $width = intval($border->border_width);
-      $color = escape($border->border_color);
-      $style = isset(BorderModel::STYLES[$border->border_style ?? ''])
-        ? $border->border_style
-        : BorderModel::DEFAULT_STYLE;
-      // Layout-safe: border must not expand past the content column (esp. mobile).
-      $cssParts = [
-        'box-sizing:border-box',
-        'max-width:100%',
-        'height:auto',
-      ];
-      $radius = max(0, min(BorderModel::MAX_RADIUS, intval($border->border_radius ?? 0)));
-      // Border image mode: the uploaded image replaces the line border (radius does not apply to border-image).
-      $frame = intval($border->frame_srl ?? 0) > 0 ? FrameModel::get(intval($border->frame_srl)) : null;
-      if ($frame && is_file(FrameModel::getDir() . $frame->file_name)) {
-        $frameSlice = intval($border->frame_slice ?? 0) > 0 ? intval($border->frame_slice) : intval($frame->slice);
-        $frameRepeat = in_array($border->frame_repeat ?? '', FrameModel::REPEATS, true) ? $border->frame_repeat : $frame->repeat_mode;
-        $cssParts[] = sprintf('border:%dpx solid transparent', $width > 0 ? $width : $frameSlice);
-        $cssParts[] = sprintf(
-          'border-image:url(%s) %d %s',
-          FrameModel::getUrl($frame),
-          $frameSlice,
-          $frameRepeat
-        );
-      } else {
-        $frame = null;
-        if ($width > 0) {
-          $cssParts[] = sprintf('border:%dpx %s %s', $width, $style, $color);
-        }
-        if ($radius > 0) {
-          $cssParts[] = sprintf('border-radius:%dpx', $radius);
-        }
-      }
-      if (($border->shadow ?? 'N') === 'Y') {
-        // Keep shadow inside-ish; still paints outside but does not affect layout width.
-        $cssParts[] = 'box-shadow:0 2px 8px rgba(0,0,0,.35)';
-      }
-      if (!$frame && $width <= 0 && $radius <= 0 && ($border->shadow ?? 'N') !== 'Y') {
-        return;
-      }
-      $cssValue = implode(';', $cssParts) . ';';
-      $minWidth = isset($border->min_image_width)
+      $minWidth = ($border && isset($border->min_image_width))
         ? max(0, intval($border->min_image_width))
         : BorderModel::DEFAULT_MIN_WIDTH;
-      $css = sprintf(
-        '<style>.ib_applied_img_%1$d{%2$s}</style>',
-        $documentSrl,
-        $cssValue
-      );
-      $js = sprintf(
-        '<script>(function(){var m=%1$d,c="ib_applied_img_%2$d",s="[class*=\\"document_%2$d_\\"] img";'
+      $css = '';
+      $defaultClass = '';
+      $defaultCss = $border ? $this->_buildCss($border) : '';
+      if ($defaultCss !== '') {
+        $defaultClass = 'ib_applied_img_' . $documentSrl;
+        $css .= sprintf('.%s{%s}', $defaultClass, $defaultCss);
+      }
+      // Per-image overrides: img_key => class name ('' = this image gets no border at all).
+      $classMap = [];
+      foreach ($items as $index => $item) {
+        $itemCss = $this->_buildCss($item);
+        $classMap[$item->img_key] = '';
+        if ($itemCss !== '') {
+          $classMap[$item->img_key] = sprintf('ib_item_%d_%d', $documentSrl, $index);
+          $css .= sprintf('.%s{%s}', $classMap[$item->img_key], $itemCss);
+        }
+      }
+      if ($css === '') {
+        return;
+      }
+      $jsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
+      $js = strtr(
+        '<script>(function(){var m=%MIN%,d=%DEF%,map=%MAP%,s=%SEL%;'
+        . 'function k(u){u=String(u||"").split("#")[0].split("?")[0];u=u.substring(u.lastIndexOf("/")+1);'
+        . 'try{u=decodeURIComponent(u);}catch(e){}return u;}'
         . 'function apply(){document.querySelectorAll(s).forEach(function(img){'
+        . 'var key=k(img.getAttribute("src"));'
+        . 'if(Object.prototype.hasOwnProperty.call(map,key)){if(map[key]){img.classList.add(map[key]);}return;}'
+        . 'if(!d){return;}'
         . 'var w=img.naturalWidth||img.width||img.offsetWidth||0;'
-        . 'if(w>=m){img.classList.add(c);}'
+        . 'if(w>=m){img.classList.add(d);}'
         . '});}'
         . 'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",apply);}'
         . 'else{apply();}'
         . 'window.addEventListener("load",apply);'
         . '})();</script>',
-        $minWidth,
-        $documentSrl
+        [
+          '%MIN%' => $minWidth,
+          '%DEF%' => json_encode($defaultClass, $jsonFlags),
+          '%MAP%' => json_encode((object)$classMap, $jsonFlags),
+          '%SEL%' => json_encode(sprintf('[class*="document_%d_"] img', $documentSrl), $jsonFlags),
+        ]
       );
-      \Context::addHtmlHeader($css);
+      \Context::addHtmlHeader('<style>' . $css . '</style>');
       \Context::addHtmlFooter($js);
       return;
     }
@@ -156,6 +142,7 @@ class EventHandlers extends Base {
       . '<div class="ib_row"><label>%16$s</label>'
       . '<label class="ib_chk"><input type="checkbox" id="ibShadow" name="ib_shadow" value="Y"%17$s /> %18$s</label>'
       . '<small>%19$s</small></div>'
+      . '%26$s'
       . '</div></div>',
       lang('cmd_img_boarder_width'),
       BorderModel::MAX_WIDTH,
@@ -181,11 +168,139 @@ class EventHandlers extends Base {
       BorderModel::MAX_RADIUS,
       $radius,
       sprintf(lang('about_img_boarder_radius'), BorderModel::MAX_RADIUS),
-      $frameRow
+      $frameRow,
+      $this->_buildItemsRow($documentSrl ? ItemModel::getList($documentSrl) : [], $styleOptions, $chips)
     );
     \Context::loadFile(['./modules/img_boarder/tpl/css/write.css', 'all']);
     \Context::loadFile(['./modules/img_boarder/tpl/js/write.js', 'body']);
     \Context::addHtmlFooter($box);
+  }
+
+  /**
+   * CSS declarations (without selector) for one border setting row; '' when the row applies nothing.
+   * Used for the document default and for every per-image override (same column names).
+   *
+   * @param object $row border_width, border_color, border_style, border_radius, frame_srl, frame_slice, frame_repeat, shadow
+   * @return string
+   */
+  protected function _buildCss(object $row): string {
+    $width = intval($row->border_width);
+    $style = isset(BorderModel::STYLES[$row->border_style ?? ''])
+      ? $row->border_style
+      : BorderModel::DEFAULT_STYLE;
+    $radius = max(0, min(BorderModel::MAX_RADIUS, intval($row->border_radius ?? 0)));
+    $shadow = ($row->shadow ?? 'N') === 'Y';
+    // Border image mode: the uploaded image replaces the line border (radius does not apply to border-image).
+    $frame = intval($row->frame_srl ?? 0) > 0 ? FrameModel::get(intval($row->frame_srl)) : null;
+    $frame = ($frame && is_file(FrameModel::getDir() . $frame->file_name)) ? $frame : null;
+    if (!$frame && $width <= 0 && $radius <= 0 && !$shadow) {
+      return '';
+    }
+    // Layout-safe: border must not expand past the content column (esp. mobile).
+    $cssParts = ['box-sizing:border-box', 'max-width:100%', 'height:auto'];
+    if ($frame) {
+      $frameSlice = intval($row->frame_slice ?? 0) > 0 ? intval($row->frame_slice) : intval($frame->slice);
+      $frameRepeat = in_array($row->frame_repeat ?? '', FrameModel::REPEATS, true) ? $row->frame_repeat : $frame->repeat_mode;
+      $cssParts[] = sprintf('border:%dpx solid transparent', $width > 0 ? $width : $frameSlice);
+      $cssParts[] = sprintf('border-image:url(%s) %d %s', FrameModel::getUrl($frame), $frameSlice, $frameRepeat);
+    } else {
+      if ($width > 0) {
+        $cssParts[] = sprintf('border:%dpx %s %s', $width, $style, escape($row->border_color));
+      }
+      if ($radius > 0) {
+        $cssParts[] = sprintf('border-radius:%dpx', $radius);
+      }
+    }
+    if ($shadow) {
+      // Keep shadow inside-ish; still paints outside but does not affect layout width.
+      $cssParts[] = 'box-shadow:0 2px 8px rgba(0,0,0,.35)';
+    }
+    return implode(';', $cssParts) . ';';
+  }
+
+  /**
+   * "Per-image settings" block of the option box: thumbnails of the body images (filled by write.js),
+   * the settings panel of the selected image, and the hidden ib_items field that carries the result.
+   * Panel inputs use form="ibNoForm" so they are never submitted themselves.
+   *
+   * @param \stdClass[] $items Saved overrides of the document being edited
+   * @param string $styleOptions <option> list of line styles
+   * @param string $chips Color chip buttons of the main color field
+   * @return string
+   */
+  protected function _buildItemsRow(array $items, string $styleOptions, string $chips): string {
+    $saved = [];
+    foreach ($items as $item) {
+      $saved[] = [
+        'key' => $item->img_key,
+        'width' => intval($item->border_width),
+        'color' => $item->border_color,
+        'style' => $item->border_style,
+        'radius' => intval($item->border_radius),
+        'shadow' => $item->shadow,
+        'frame' => intval($item->frame_srl),
+        'slice' => intval($item->frame_slice),
+        'repeat' => $item->frame_repeat,
+      ];
+    }
+    $repeatOptions = '';
+    foreach (FrameModel::REPEATS as $repeat) {
+      $repeatOptions .= sprintf('<option value="%1$s">%2$s</option>', $repeat, escape(lang('cmd_img_boarder_repeat_' . $repeat)));
+    }
+    return sprintf(
+      '<div class="ib_row ib_items_row">'
+      . '<label>%1$s</label>'
+      . '<div class="ib_imgs_bar"><button type="button" class="ib_btn" id="ibImgsRefresh">%2$s</button></div>'
+      . '<div class="ib_imgs" id="ibImgs" data-items="%3$s" data-badge="%4$s" data-empty="%5$s"></div>'
+      . '<div class="ib_item_panel is-off" id="ibItemPanel" hidden>'
+      . '<div class="ib_row"><label class="ib_chk"><input type="checkbox" id="ibiOn" form="ibNoForm" /> %6$s</label><small>%7$s</small></div>'
+      . '<div class="ib_item_fields">'
+      . '<div class="ib_row"><label for="ibiWidth">%8$s</label>'
+      . '<input type="number" id="ibiWidth" form="ibNoForm" min="0" max="%9$d" step="1" value="0" /><span class="ib_unit">px</span></div>'
+      . '<div class="ib_row ib_i_line"><label for="ibiStyle">%10$s</label>'
+      . '<select id="ibiStyle" form="ibNoForm">%11$s</select></div>'
+      . '<div class="ib_row ib_i_line"><label for="ibiRadius">%12$s</label>'
+      . '<input type="number" id="ibiRadius" form="ibNoForm" min="0" max="%13$d" step="1" value="0" /><span class="ib_unit">px</span></div>'
+      . '<div class="ib_row ib_i_line"><label for="ibiColor">%14$s</label>'
+      . '<div class="ib_color"><input type="text" id="ibiColor" form="ibNoForm" maxlength="9" placeholder="%15$s" value="%15$s" />'
+      . '<input type="color" id="ibiPicker" form="ibNoForm" value="%15$s" title="%14$s" /><span class="ib_chips">%16$s</span></div></div>'
+      . '<div class="ib_row"><label>%17$s</label>'
+      . '<label class="ib_chk"><input type="checkbox" id="ibiShadow" form="ibNoForm" value="Y" /> %18$s</label></div>'
+      . '<div class="ib_row"><label>%19$s</label>'
+      . '<div class="ib_frames" id="ibiFrames" data-none="%20$s"></div>'
+      . '<div class="ib_item_opts">'
+      . '<span class="ib_upload_opt"><label for="ibiSlice">%21$s</label><input type="number" id="ibiSlice" form="ibNoForm" min="1" step="1" value="%22$d" /><span class="ib_unit">px</span></span>'
+      . '<span class="ib_upload_opt"><label for="ibiRepeat">%23$s</label><select id="ibiRepeat" form="ibNoForm">%24$s</select></span>'
+      . '</div></div>'
+      . '</div></div>'
+      . '<input type="hidden" name="ib_items" id="ibItems" value="" />'
+      . '<small>%25$s</small></div>',
+      lang('cmd_img_boarder_items'),
+      lang('cmd_img_boarder_items_refresh'),
+      escape(json_encode($saved, JSON_UNESCAPED_UNICODE)),
+      escape(lang('cmd_img_boarder_item_badge')),
+      escape(lang('msg_img_boarder_items_empty')),
+      lang('cmd_img_boarder_item_on'),
+      lang('about_img_boarder_item_on'),
+      lang('cmd_img_boarder_width'),
+      BorderModel::MAX_WIDTH,
+      lang('cmd_img_boarder_style'),
+      $styleOptions,
+      lang('cmd_img_boarder_radius'),
+      BorderModel::MAX_RADIUS,
+      lang('cmd_img_boarder_color'),
+      BorderModel::DEFAULT_COLOR,
+      str_replace('ib_chip', 'ib_ichip', $chips),
+      lang('cmd_img_boarder_shadow'),
+      lang('cmd_img_boarder_shadow_on'),
+      lang('cmd_img_boarder_frame'),
+      escape(lang('cmd_img_boarder_frame_none')),
+      lang('cmd_img_boarder_frame_slice'),
+      FrameModel::DEFAULT_SLICE,
+      lang('cmd_img_boarder_frame_repeat'),
+      $repeatOptions,
+      lang('about_img_boarder_items')
+    );
   }
 
   /**
@@ -303,6 +418,7 @@ class EventHandlers extends Base {
    */
   public function afterDeleteDocument(object $obj): void {
     BorderModel::delete(intval($obj->document_srl));
+    ItemModel::deleteAll(intval($obj->document_srl));
   }
 
   /**
@@ -321,5 +437,9 @@ class EventHandlers extends Base {
       return;
     }
     BorderModel::save(intval($obj->document_srl), intval($obj->module_srl), $vars);
+    // ib_items stays empty when write.js did not run: keep the saved overrides in that case.
+    if (strval($vars->ib_items ?? '') !== '') {
+      ItemModel::saveAll(intval($obj->document_srl), strval($vars->ib_items), strval($obj->content ?? ''));
+    }
   }
 }
