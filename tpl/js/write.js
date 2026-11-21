@@ -192,23 +192,34 @@ jQuery(function ($) {
   // Hover preview: enlarged image next to the thumbnail (appended to body so the box's overflow can not clip it).
   var $preview = $('<img id="ibPreview" alt="" />').appendTo(document.body);
   var PREVIEW_SIZE = 240;
+  var BODY_PREVIEW_SIZE = 240;
 
   function hidePreview() {
     $preview.hide();
   }
 
-  $box.on('mouseenter', '.ib_frames .ib_frame img', function () {
-    var rect = this.getBoundingClientRect();
+  function showPreview(img, size) {
+    var rect = img.getBoundingClientRect();
     var gap = 10;
+    size = Math.min(size, window.innerWidth - 8, window.innerHeight - 8);
     // Above the thumbnail, centered on it; below only when there is no room above.
-    var top = rect.top - gap - PREVIEW_SIZE;
+    var top = rect.top - gap - size;
     if (top < 4) {
-      top = Math.min(rect.bottom + gap, window.innerHeight - PREVIEW_SIZE - 4);
+      top = Math.min(rect.bottom + gap, window.innerHeight - size - 4);
     }
-    var left = rect.left + rect.width / 2 - PREVIEW_SIZE / 2;
-    left = Math.max(4, Math.min(left, window.innerWidth - PREVIEW_SIZE - 4));
-    $preview.attr('src', this.src).css({ left: left, top: top }).show();
+    var left = rect.left + rect.width / 2 - size / 2;
+    left = Math.max(4, Math.min(left, window.innerWidth - size - 4));
+    $preview[0].style.setProperty('--ib-pv', size + 'px');
+    $preview.attr('src', img.src).css({ left: left, top: top }).show();
+  }
+
+  $box.on('mouseenter', '.ib_frames .ib_frame img', function () {
+    showPreview(this, PREVIEW_SIZE);
   }).on('mouseleave', '.ib_frames .ib_frame img', hidePreview);
+  // Body images get a bigger preview.
+  $box.on('mouseenter', '.ib_imgs .ib_img img', function () {
+    showPreview(this, BODY_PREVIEW_SIZE);
+  }).on('mouseleave', '.ib_imgs .ib_img img', hidePreview);
   $(window).on('scroll blur', hidePreview);
 
   syncFrameMode();
@@ -223,7 +234,9 @@ jQuery(function ($) {
   var $itemChips = $panel.find('.ib_ichip');
   var items = {};      // img key -> {width, color, style, radius, shadow, frame, slice, repeat}
   var imgList = [];    // [{key, url}] body images found in the editor
-  var current = '';    // key of the image shown in the panel
+  var sel = [];        // keys of the selected images (the panel edits all of them at once)
+  var anchor = '';     // last clicked key, start of a shift-click range
+  var multiMode = false; // 'select multiple' button: every click toggles
   var MAX_WIDTH = parseInt($width.attr('max'), 10) || 20;
   var MAX_RADIUS = parseInt($('#ibRadius').attr('max'), 10) || 100;
 
@@ -347,6 +360,7 @@ jQuery(function ($) {
   }
 
   function renderImages() {
+    hidePreview();
     $imgs.empty();
     if (!imgList.length) {
       $imgs.append($('<span class="ib_imgs_empty"></span>').text($imgs.attr('data-empty')));
@@ -356,18 +370,79 @@ jQuery(function ($) {
       var $thumb = $('<span class="ib_img" role="button" tabindex="0"></span>').attr('data-key', img.key).attr('title', img.key);
       $thumb.append($('<img alt="" />').attr('src', img.url));
       $thumb.append($('<span class="ib_img_badge"></span>').text($imgs.attr('data-badge')));
-      $thumb.toggleClass('has', !!items[img.key]).toggleClass('on', img.key === current);
+      $thumb.toggleClass('has', !!items[img.key]).toggleClass('on', $.inArray(img.key, sel) > -1);
       $imgs.append($thumb);
     });
   }
 
-  function openPanel(key) {
-    current = key;
-    var it = items[key];
-    writePanel(it || mainValues());
-    $('#ibiOn').prop('checked', !!it);
-    $panel.toggleClass('is-off', !it).prop('hidden', false);
+  // Panel for the selection: shows the first override found (else the document default);
+  // the checkbox is on only when every selected image has its own settings.
+  function openPanel() {
+    if (!sel.length) {
+      $panel.prop('hidden', true);
+      renderImages();
+      return;
+    }
+    var source = null;
+    var all = true;
+    $.each(sel, function (i, key) {
+      if (!items[key]) {
+        all = false;
+      } else if (!source) {
+        source = items[key];
+      }
+    });
+    writePanel(source || mainValues());
+    $('#ibiOn').prop('checked', all);
+    $panel.toggleClass('is-off', !all).prop('hidden', false);
+    $('#ibSelInfo').text($panel.attr('data-selected').replace('%d', sel.length)).prop('hidden', sel.length < 2);
     renderImages();
+  }
+
+  // Click = only this image, Ctrl/Cmd (or the multi button) = add/remove, Shift = range from the last click.
+  function selectImage(key, e) {
+    var index = $.inArray(key, sel);
+    if (e.shiftKey && anchor) {
+      var from = -1;
+      var to = -1;
+      $.each(imgList, function (i, img) {
+        from = img.key === anchor ? i : from;
+        to = img.key === key ? i : to;
+      });
+      if (from > -1 && to > -1) {
+        sel = $.map(imgList.slice(Math.min(from, to), Math.max(from, to) + 1), function (img) {
+          return img.key;
+        });
+      }
+    } else if (multiMode || e.ctrlKey || e.metaKey) {
+      if (index > -1) {
+        sel.splice(index, 1);
+      } else {
+        sel.push(key);
+      }
+      anchor = key;
+    } else {
+      sel = [key];
+      anchor = key;
+    }
+    openPanel();
+  }
+
+  // on = store the panel values for every selected image, off = back to the document default.
+  function applyPanel(on) {
+    var values = readPanel();
+    $.each(sel, function (i, key) {
+      if (on) {
+        items[key] = $.extend({}, values);
+      } else {
+        delete items[key];
+      }
+    });
+    $panel.toggleClass('is-off', !on);
+    $imgs.find('.ib_img').each(function () {
+      $(this).toggleClass('has', !!items[$(this).attr('data-key')]);
+    });
+    syncItemsInput();
   }
 
   function refreshImages() {
@@ -384,8 +459,15 @@ jQuery(function ($) {
       var url = /^(?:[a-z]+:)?\/\/|^\//i.test(src) ? src : (window.request_uri || '/') + src;
       imgList.push({ key: key, url: url });
     });
-    if (current && !seen[current]) {
-      current = '';
+    var before = sel.length;
+    sel = $.grep(sel, function (key) {
+      return !!seen[key];
+    });
+    if (sel.length && sel.length !== before) {
+      openPanel();
+      return;
+    }
+    if (!sel.length) {
       $panel.prop('hidden', true);
     }
     renderImages();
@@ -396,21 +478,34 @@ jQuery(function ($) {
     refreshImages();
   });
 
-  $imgs.on('click', '.ib_img', function () {
-    openPanel($(this).attr('data-key'));
+  $('#ibImgsAll').on('click', function (e) {
+    e.preventDefault();
+    sel = $.map(imgList, function (img) {
+      return img.key;
+    });
+    anchor = sel[0] || '';
+    openPanel();
+  });
+
+  $('#ibImgsMulti').on('click', function (e) {
+    e.preventDefault();
+    multiMode = !multiMode;
+    $(this).toggleClass('on', multiMode).attr('aria-pressed', multiMode ? 'true' : 'false');
+  });
+
+  $imgs.on('click', '.ib_img', function (e) {
+    selectImage($(this).attr('data-key'), e);
   }).on('keydown', '.ib_img', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      openPanel($(this).attr('data-key'));
+      selectImage($(this).attr('data-key'), e);
     }
   });
 
-  // Any change in the panel: checkbox on = store the panel values for this image, off = back to the document default.
   $panel.on('input change', 'input, select', function () {
-    if (!current) {
+    if (!sel.length) {
       return;
     }
-    var on = $('#ibiOn').prop('checked');
     if (this.name === 'ibi_frame') {
       var $item = $(this).closest('.ib_frame');
       if ($item.attr('data-slice')) {
@@ -424,16 +519,7 @@ jQuery(function ($) {
     } else if (this.id === 'ibiPicker') {
       setItemColor(this.value);
     }
-    if (on) {
-      items[current] = readPanel();
-    } else {
-      delete items[current];
-    }
-    $panel.toggleClass('is-off', !on);
-    $imgs.find('.ib_img').filter(function () {
-      return $(this).attr('data-key') === current;
-    }).toggleClass('has', on);
-    syncItemsInput();
+    applyPanel($('#ibiOn').prop('checked'));
   }).on('keydown', 'input', function (e) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -446,9 +532,8 @@ jQuery(function ($) {
       v = '#' + v;
     }
     setItemColor(isHex(v) ? v : $itemColor.attr('placeholder'));
-    if ($('#ibiOn').prop('checked') && current) {
-      items[current] = readPanel();
-      syncItemsInput();
+    if ($('#ibiOn').prop('checked') && sel.length) {
+      applyPanel(true);
     }
   });
 

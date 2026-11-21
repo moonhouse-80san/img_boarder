@@ -250,9 +250,12 @@ class EventHandlers extends Base {
     return sprintf(
       '<div class="ib_row ib_items_row">'
       . '<label>%1$s</label>'
-      . '<div class="ib_imgs_bar"><button type="button" class="ib_btn" id="ibImgsRefresh">%2$s</button></div>'
+      . '<div class="ib_imgs_bar"><button type="button" class="ib_btn" id="ibImgsRefresh">%2$s</button>'
+      . '<button type="button" class="ib_btn" id="ibImgsAll">%26$s</button>'
+      . '<button type="button" class="ib_btn" id="ibImgsMulti" aria-pressed="false">%27$s</button></div>'
       . '<div class="ib_imgs" id="ibImgs" data-items="%3$s" data-badge="%4$s" data-empty="%5$s"></div>'
-      . '<div class="ib_item_panel is-off" id="ibItemPanel" hidden>'
+      . '<div class="ib_item_panel is-off" id="ibItemPanel" data-selected="%28$s" hidden>'
+      . '<div class="ib_sel_info" id="ibSelInfo" hidden></div>'
       . '<div class="ib_row"><label class="ib_chk"><input type="checkbox" id="ibiOn" form="ibNoForm" /> %6$s</label><small>%7$s</small></div>'
       . '<div class="ib_item_fields">'
       . '<div class="ib_row"><label for="ibiWidth">%8$s</label>'
@@ -299,7 +302,10 @@ class EventHandlers extends Base {
       FrameModel::DEFAULT_SLICE,
       lang('cmd_img_boarder_frame_repeat'),
       $repeatOptions,
-      lang('about_img_boarder_items')
+      lang('about_img_boarder_items'),
+      lang('cmd_img_boarder_items_all'),
+      lang('cmd_img_boarder_items_multi'),
+      escape(lang('msg_img_boarder_items_selected'))
     );
   }
 
