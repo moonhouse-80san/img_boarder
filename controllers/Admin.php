@@ -75,49 +75,109 @@ class Admin extends Base {
   /**
    * Compare local conf/info.xml version with GitHub master.
    *
-   * @return object{local:string, remote:?string, status:string, github_url:string}
+   * @return object{local:string, remote:string, status:string, github_url:string}
    *   status: latest | update | unknown
    */
   private function _getVersionInfo() {
     $info = (object)[
       'local' => $this->_readLocalVersion(),
-      'remote' => null,
+      'remote' => '',
       'status' => 'unknown',
       'github_url' => 'https://github.com/moonhouse-80san/img_boarder',
+      'label' => '',
+      'show' => false,
     ];
 
     $remote = $this->_fetchRemoteVersion();
-    if ($remote === null || $remote === '') {
-      return $info;
+    if (is_string($remote) && $remote !== '') {
+      $info->remote = $remote;
     }
 
-    $info->remote = $remote;
-    $cmp = version_compare($info->local, $remote);
-    if ($cmp < 0) {
-      $info->status = 'update';
-    } elseif ($cmp === 0) {
-      $info->status = 'latest';
-    } else {
-      // local newer than GitHub (dev / pre-release)
-      $info->status = 'latest';
+    if ($info->local !== '' && $info->remote !== '') {
+      if (version_compare($info->local, $info->remote) < 0) {
+        $info->status = 'update';
+        $info->label = 'update';
+      } else {
+        $info->status = 'latest';
+        $info->label = 'latest';
+      }
+      $info->show = true;
+    } elseif ($info->local !== '') {
+      $info->status = 'unknown';
+      $info->label = 'local';
+      $info->show = true;
+    } elseif ($info->remote !== '') {
+      $info->status = 'unknown';
+      $info->label = 'remote';
+      $info->show = true;
     }
+
     return $info;
   }
 
   /**
    * Read version from local conf/info.xml.
+   * Reflection 으로 실제 로드된 클래스 파일 위치를 기준으로 찾는다.
    */
   private function _readLocalVersion(): string {
-    $path = $this->module_path . 'conf/info.xml';
-    if (!is_readable($path)) {
-      return '0';
+    $candidates = [];
+
+    try {
+      $file = (new \ReflectionClass($this))->getFileName();
+      if ($file) {
+        // .../modules/img_boarder/controllers/Admin.php → .../modules/img_boarder/conf/info.xml
+        $candidates[] = dirname($file, 2) . '/conf/info.xml';
+        $candidates[] = dirname(dirname($file)) . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'info.xml';
+      }
+    } catch (\Throwable $e) {
+      // ignore
     }
-    $xml = @simplexml_load_file($path);
-    if (!$xml || !isset($xml->version)) {
-      return '0';
+
+    $candidates[] = dirname(__DIR__) . '/conf/info.xml';
+    $candidates[] = __DIR__ . '/../conf/info.xml';
+
+    if (!empty($this->module_path)) {
+      $candidates[] = rtrim(str_replace('\\', '/', $this->module_path), '/') . '/conf/info.xml';
     }
-    $ver = trim((string)$xml->version);
-    return $ver !== '' ? $ver : '0';
+
+    if (defined('RX_BASEDIR')) {
+      $candidates[] = RX_BASEDIR . 'modules/img_boarder/conf/info.xml';
+    }
+    if (defined('_XE_PATH_')) {
+      $candidates[] = _XE_PATH_ . 'modules/img_boarder/conf/info.xml';
+    }
+
+    foreach (array_unique($candidates) as $path) {
+      $ver = $this->_parseVersionFromFile($path);
+      if ($ver !== '') {
+        return $ver;
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Parse <version> from an info.xml path (simplexml 또는 정규식).
+   */
+  private function _parseVersionFromFile(string $path): string {
+    if ($path === '' || !is_file($path) || !is_readable($path)) {
+      return '';
+    }
+    $raw = @file_get_contents($path);
+    if ($raw === false || $raw === '') {
+      return '';
+    }
+    if (preg_match('/<version>\s*([^<\s]+)\s*<\/version>/i', $raw, $m)) {
+      return trim($m[1]);
+    }
+    $xml = @simplexml_load_string($raw);
+    if ($xml && isset($xml->version)) {
+      $ver = trim((string)$xml->version);
+      if ($ver !== '') {
+        return $ver;
+      }
+    }
+    return '';
   }
 
   /**
@@ -135,16 +195,25 @@ class Admin extends Base {
       $status = method_exists($response, 'getStatusCode') ? (int)$response->getStatusCode() : 0;
       if ($status >= 200 && $status < 300 && method_exists($response, 'getBody')) {
         $body = (string)$response->getBody();
-        $xml = @simplexml_load_string($body);
-        if ($xml && isset($xml->version)) {
-          $ver = trim((string)$xml->version);
-          if ($ver !== '') {
-            $version = $ver;
-          }
+        if (preg_match('/<version>\s*([^<\s]+)\s*<\/version>/i', $body, $m)) {
+          $version = trim($m[1]);
         }
       }
     } catch (\Throwable $e) {
       $version = null;
+    }
+
+    // HTTP 클래스 실패 시 file_get_contents 폴백
+    if ($version === null) {
+      try {
+        $ctx = stream_context_create(['http' => ['timeout' => 3], 'ssl' => ['verify_peer' => true]]);
+        $body = @file_get_contents(self::GITHUB_INFO_URL, false, $ctx);
+        if (is_string($body) && preg_match('/<version>\s*([^<\s]+)\s*<\/version>/i', $body, $m)) {
+          $version = trim($m[1]);
+        }
+      } catch (\Throwable $e) {
+        $version = null;
+      }
     }
 
     Cache::set(self::VERSION_CACHE_KEY, $version ?? '__fail__', self::VERSION_CACHE_TTL);

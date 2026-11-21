@@ -38,15 +38,17 @@
     <div class="ib-panel">
       <div class="ib-head">
         <h2>@lang('cmd_img_boarder_target')</h2><span>@lang('cmd_img_boarder_target_sub')</span>
-        @if (!empty($version_info))
+        @if (!empty($version_info) && !empty($version_info->show))
           <span class="ib-ver ib-ver-{{ $version_info->status }}">
-            @if ($version_info->status === 'latest')
+            @if ($version_info->label === 'latest')
               @lang('cmd_img_boarder_ver_latest') · v{{ $version_info->local }}
-            @elseif ($version_info->status === 'update')
+            @elseif ($version_info->label === 'update')
               <a href="{{ $version_info->github_url }}" target="_blank" rel="noopener">@lang('cmd_img_boarder_ver_update')</a>
               · v{{ $version_info->local }} → v{{ $version_info->remote }}
-            @else
+            @elseif ($version_info->label === 'local')
               v{{ $version_info->local }}
+            @elseif ($version_info->label === 'remote')
+              <a href="{{ $version_info->github_url }}" target="_blank" rel="noopener">GitHub v{{ $version_info->remote }}</a>
             @endif
           </span>
         @endif
