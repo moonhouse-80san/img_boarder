@@ -56,3 +56,5 @@ $lang->cmd_img_boarder_item_badge = 'Own';
 $lang->msg_img_boarder_items_empty = 'There are no images in the body. Add images, then load again.';
 $lang->cmd_img_boarder_item_on = 'Use separate settings for this image';
 $lang->about_img_boarder_item_on = 'When off, the default is used. When on with width 0, no shadow and no border image, only this image has no border.';
+$lang->cmd_img_boarder_ver_latest = 'Up to date';
+$lang->cmd_img_boarder_ver_update = 'Update available';

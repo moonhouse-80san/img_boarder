@@ -56,3 +56,5 @@ $lang->cmd_img_boarder_item_badge = '개별';
 $lang->msg_img_boarder_items_empty = '본문에 넣은 이미지가 없습니다. 이미지를 넣은 뒤 다시 불러오세요.';
 $lang->cmd_img_boarder_item_on = '이 이미지만 따로 설정';
 $lang->about_img_boarder_item_on = '끄면 기본값을 따릅니다. 켠 뒤 굵기 0, 그림자 해제, 테두리 이미지 없음으로 두면 이 이미지만 테두리가 없어집니다.';
+$lang->cmd_img_boarder_ver_latest = '최신';
+$lang->cmd_img_boarder_ver_update = '업데이트 있음';

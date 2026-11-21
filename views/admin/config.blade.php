@@ -1,9 +1,15 @@
 <style>
   .ib-wrap { max-width: 1100px; margin: 0 auto; }
   .ib-panel { border: 1px solid #dcdfe4; border-radius: 16px; background: #fff; overflow: hidden; margin-bottom: 20px; }
-  .ib-head { padding: 18px 24px; border-bottom: 1px solid #e5e7eb; }
+  .ib-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 18px 24px; border-bottom: 1px solid #e5e7eb; }
   .ib-head h2 { display: inline; margin: 0; font-size: 17px; font-weight: 700; }
-  .ib-head span { margin-left: 8px; color: #8a8f98; font-size: 13px; }
+  .ib-head > span { margin-left: 0; color: #8a8f98; font-size: 13px; }
+  .ib-ver { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .ib-ver a { color: inherit; text-decoration: none; border-bottom: 1px dashed currentColor; }
+  .ib-ver a:hover { opacity: .85; }
+  .ib-ver-latest { color: #1a7f37; background: #e6f6ea; border: 1px solid #b7e0c2; border-radius: 999px; padding: 4px 10px; }
+  .ib-ver-update { color: #9a3412; background: #fff1e6; border: 1px solid #fdba74; border-radius: 999px; padding: 4px 10px; }
+  .ib-ver-unknown { color: #6b7280; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 999px; padding: 4px 10px; }
   .ib-body { padding: 24px; }
   .ib-info { margin-bottom: 20px; padding: 14px 18px; border: 1px solid #e0e3e8; border-radius: 12px; background: #f6f7f9; color: #555; font-size: 13px; }
   .ib-bar { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid #e5e7eb; }
@@ -32,6 +38,18 @@
     <div class="ib-panel">
       <div class="ib-head">
         <h2>@lang('cmd_img_boarder_target')</h2><span>@lang('cmd_img_boarder_target_sub')</span>
+        @if (!empty($version_info))
+          <span class="ib-ver ib-ver-{{ $version_info->status }}">
+            @if ($version_info->status === 'latest')
+              @lang('cmd_img_boarder_ver_latest') · v{{ $version_info->local }}
+            @elseif ($version_info->status === 'update')
+              <a href="{{ $version_info->github_url }}" target="_blank" rel="noopener">@lang('cmd_img_boarder_ver_update')</a>
+              · v{{ $version_info->local }} → v{{ $version_info->remote }}
+            @else
+              v{{ $version_info->local }}
+            @endif
+          </span>
+        @endif
       </div>
       <div class="ib-body">
         <div class="ib-info">{!! lang('about_img_boarder_target') !!}</div>
