@@ -60,3 +60,4 @@ $lang->cmd_img_boarder_items_all = '전체 선택';
 $lang->cmd_img_boarder_items_multi = '여러 개 선택';
 $lang->msg_img_boarder_items_selected = '%d개 이미지 선택됨 - 아래 설정이 선택한 이미지 모두에 적용됩니다.';
 $lang->cmd_img_boarder_ver_latest = '최신';
+$lang->cmd_img_boarder_ver_update = '업데이트 있음';

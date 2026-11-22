@@ -60,3 +60,4 @@ $lang->cmd_img_boarder_items_all = 'Select all';
 $lang->cmd_img_boarder_items_multi = 'Select multiple';
 $lang->msg_img_boarder_items_selected = '%d images selected - the settings below apply to all of them.';
 $lang->cmd_img_boarder_ver_latest = 'Latest';
+$lang->cmd_img_boarder_ver_update = 'Update available';
