@@ -192,7 +192,7 @@
   display: block !important; float: none !important; width: 64px !important; height: 64px !important; max-width: none !important;
   margin: 0 !important; padding: 0 !important; object-fit: cover; border: 1px solid #ccc !important; border-radius: 6px !important; background: #fff;
 }
-#ibBox .ib_img.on img { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #444; }
+#ibBox .ib_img.on img { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #ffd3a8; }
 #ibBox .ib_img_badge {
   display: none; position: absolute; left: 3px; bottom: 3px; pointer-events: none; padding: 1px 6px; border-radius: 999px;
   background: #1a6fd4; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.5;
